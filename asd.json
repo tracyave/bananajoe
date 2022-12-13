@@ -1,0 +1,363 @@
+Form1
+namespace zh3gyakéáű
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            panel1.Controls.Clear();
+            UserControl1 u1=new UserControl1();
+            panel1.Controls.Add(u1);
+            u1.Dock = DockStyle.Fill;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            panel1.Controls.Clear();
+            UserControl2 u2=new UserControl2();
+            panel1.Controls.Add(u2);
+            u2.Dock = DockStyle.Fill;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            panel1.Controls.Clear();
+            UserControl3 u3= new UserControl3();
+            panel1.Controls.Add(u3);
+            u3.Dock = DockStyle.Fill;
+
+        }
+    }
+} 
+
+
+Form2 (hozzáadás)
+
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace zh3gyakéáű
+{
+    public partial class Form2 : Form
+    {
+        Models.context context=new Models.context();
+        public Form2()
+        {
+            InitializeComponent();
+        }
+
+        private void Form2_Load(object sender, EventArgs e)
+        {
+         
+        }
+
+        private void textBox1_Validated(object sender, EventArgs e)
+        {
+            errorProvider1.SetError(textBox1, "");
+
+        }
+
+        private void textBox2_Validated(object sender, EventArgs e)
+        {
+            errorProvider1.SetError(textBox2, "");
+
+        }
+
+        private void textBox2_Validating(object sender, CancelEventArgs e)
+        {
+            if (!CheckNeptun(textBox2.Text))
+            {
+                e.Cancel = true;
+                errorProvider1.SetError(textBox2, "Érvénytelen Neptun kód");
+            }
+        }
+
+        private void textBox1_Validating(object sender, CancelEventArgs e)
+        {
+            if (!CheckName(textBox1.Text))
+            {
+                e.Cancel = true;
+                errorProvider1.SetError(textBox1, "A név nem lehet üres");
+            }
+        }
+
+        private bool CheckName(string név)
+        {
+            return !string.IsNullOrEmpty(név);
+        }
+
+        private bool CheckNeptun(string neptun)
+        {
+            Regex r = new Regex("^[A-Z0-9]{6}$");
+            return r.IsMatch(neptun);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (this.ValidateChildren())
+            {
+                if (MessageBox.Show("Biztos hozzáadja?","he",MessageBoxButtons.YesNo)==DialogResult.Yes)
+                {
+                    Models.Személy személy = new Models.Személy();
+                    személy.Neptun = textBox2.Text;
+                    személy.Név = textBox1.Text;
+                    context.Személies.Add(személy);
+                    context.SaveChanges();
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+                else
+                {
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+            }
+            else
+            {
+                MessageBox.Show("nem jó sajna");
+            }
+        }
+    }
+}
+
+
+UserControl1
+
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace zh3gyakéáű
+{
+    public partial class UserControl1 : UserControl
+    {
+        Models.context context=new Models.context();
+        public UserControl1()
+        {
+            InitializeComponent();
+            kiírás();
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Form2 form = new Form2();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                MessageBox.Show("OK-al zárult");
+            }
+            else
+            {
+                MessageBox.Show("Nem OK-al zárult");
+            }
+            kiírás();
+        }
+        void kiírás()
+        {
+            var ilist= from i in context.Személies select i;
+            személyBindingSource.DataSource = ilist.ToList();
+        }
+    }
+}
+
+
+usercontrol2
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace zh3gyakéáű
+{
+    public partial class UserControl2 : UserControl
+    {
+        Models.context context=new Models.context();
+        public UserControl2()
+        {
+            InitializeComponent();
+            kiírás();
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Biztos törli?", "he", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                var törölt = (Models.Személy)listBox1.SelectedItem;
+                var ilist = (from i in context.Személies where i.Neptun == törölt.Neptun select i).FirstOrDefault();
+                context.Személies.Remove(ilist);
+                context.SaveChanges();
+                kiírás();
+            }
+            }
+        void kiírás()
+        {
+            var ilist = from i in context.Személies select i;
+            listBox1.DataSource = ilist.ToList();
+            listBox1.DisplayMember = "NEPTUN";
+        }
+
+    }
+}
+
+usercontrol3
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Excel = Microsoft.Office.Interop.Excel;
+using System.Reflection;
+
+namespace zh3gyakéáű
+{
+    public partial class UserControl3 : UserControl
+    {
+        Models.context context = new Models.context();
+        Excel.Application xlApp; // A Microsoft Excel alkalmazás
+        Excel.Workbook xlWB;     // A létrehozott munkafüzet
+        Excel.Worksheet xlSheet;
+        public UserControl3()
+        {
+            InitializeComponent();
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            datagrid();
+        }
+
+        private void UserControl3_Load(object sender, EventArgs e)
+        {
+            var a = from i in context.Ugyfeleks where i.Nev.Contains(textBox1.Text) select i;
+            listBox1.DataSource = a.ToList();
+            listBox1.DisplayMember = "Nev";
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            var a = from i in context.Ugyfeleks where i.Nev.Contains(textBox1.Text) select i;
+            listBox1.DataSource = a.ToList();
+            listBox1.DisplayMember = "Nev";
+        }
+        void datagrid()
+        {
+            var x = (Models.Ugyfelek)listBox1.SelectedItem;
+            var y = from i in context.Szolgaltatasoks where i.UgyfelAz==x.Az select i;
+            szolgaltatasokBindingSource.DataSource = y.ToList();
+            
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            createexcel();
+        }
+        void createexcel()
+        {
+            try
+            {
+                // Excel elindítása és az applikáció objektum betöltése
+                xlApp = new Excel.Application();
+
+                // Új munkafüzet
+                xlWB = xlApp.Workbooks.Add(Missing.Value);
+
+                // Új munkalap
+                xlSheet = xlWB.ActiveSheet;
+
+                // Tábla létrehozása
+                CreateTable(); // Ennek megírása a következő feladatrészben következik
+
+                // Control átadása a felhasználónak
+                xlApp.Visible = true;
+                xlApp.UserControl = true;
+            }
+            catch (Exception ex) // Hibakezelés a beépített hibaüzenettel
+            {
+                string errMsg = string.Format("Error: {0}\nLine: {1}", ex.Message, ex.Source);
+                MessageBox.Show(errMsg, "Error");
+
+                // Hiba esetén az Excel applikáció bezárása automatikusan
+                xlWB.Close(false, Type.Missing, Type.Missing);
+                xlApp.Quit();
+                xlWB = null;
+                xlApp = null;
+            }
+        }
+        void CreateTable()
+        {
+            string[] fejlécek = new string[] {
+        "Az",
+        "Datum",
+        "Ugyfelaz",
+        "tevAz",
+        };
+            for (int i = 0; i < fejlécek.Length; i++)
+            {
+                xlSheet.Cells[1, i+1] = fejlécek[i];
+
+            }
+            var x = (Models.Ugyfelek)listBox1.SelectedItem;
+            var y = (from i in context.Szolgaltatasoks where i.UgyfelAz == x.Az select i).ToList();
+            
+            object[,] adatTömb = new object[y.Count(), fejlécek.Count()];
+            for (int i = 0; i < y.Count(); i++)
+            {
+                adatTömb[i, 0] = y[i].Az;
+                adatTömb[i, 1] = y[i].Datum;
+                adatTömb[i, 2] = y[i].TevAz;
+                adatTömb[i, 3] = y[i].UgyfelAz;
+               
+            }
+            int sorokSzáma = adatTömb.GetLength(0);
+            int oszlopokSzáma = adatTömb.GetLength(1);
+            Excel.Range adatRange = xlSheet.get_Range("A2", Type.Missing).get_Resize(sorokSzáma, oszlopokSzáma);
+            adatRange.Value2 = adatTömb;
+            adatRange.Columns.AutoFit();
+            Excel.Range fejllécRange = xlSheet.get_Range("A1", Type.Missing).get_Resize(1, 6);
+            fejllécRange.Font.Bold = true;
+            fejllécRange.VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
+
+
+        }
+    }
+   
+}
+
+
